@@ -1,6 +1,8 @@
 # Calex
 
-**TODO: Add description**
+An Elixir library for encoding and decoding the [iCalendar (iCal)](https://datatracker.ietf.org/doc/html/rfc5545) data format.
+
+Implementation based on the [Calibex](https://github.com/kbrw/calibex) library.
 
 ## Installation
 
