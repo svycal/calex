@@ -18,21 +18,24 @@ defmodule Calex.Encoder do
   end
 
   # encode value with properties
-  defp encode_value({k, [{_k, _v} | _] = v}) do
+  defp encode_value({k, {v, [{_k, _v} | _] = props}}) do
     encoded_props =
-      v
-      |> Keyword.delete(:value)
+      props
       |> Enum.map(fn {pk, pv} -> "#{encode_key(pk)}=#{encode_value(pv)}" end)
       |> Enum.join(";")
 
-    "#{encode_key(k)};#{encoded_props}:#{encode_value(v[:value])}"
+    "#{encode_key(k)};#{encoded_props}:#{encode_value(v)}"
   end
 
-  # encode standard key value
-  defp encode_value({k, v}), do: "#{encode_key(k)}:#{encode_value(v)}"
+  # encode value with empty props
+  defp encode_value({k, {v, _}}), do: "#{encode_key(k)}:#{encode_value(v)}"
 
-  defp encode_value(%DateTime{} = dt),
-    do: %{dt | microsecond: {0, 0}} |> Timex.to_datetime("UTC") |> Timex.format!("{ISO:Basic:Z}")
+  defp encode_value(%DateTime{} = datetime) do
+    datetime
+    |> DateTime.truncate(:millisecond)
+    |> DateTime.shift_zone!("Etc/UTC")
+    |> Timex.format!("{ISO:Basic:Z}")
+  end
 
   defp encode_value(atom) when is_atom(atom), do: atom |> to_string() |> String.upcase()
   defp encode_value(other), do: other

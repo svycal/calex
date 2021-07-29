@@ -26,6 +26,7 @@ defmodule Calex.Decoder do
   defp decode_blocks(["BEGIN:" <> binkey | rest]) do
     {props, [_ | lines_rest]} = Enum.split_while(rest, &(!match?("END:" <> ^binkey, &1)))
     key = decode_key(binkey)
+
     # accumulate block of same keys
     case decode_blocks(lines_rest) do
       [{^key, elems} | props_rest] -> [{key, [decode_blocks(props) | elems]} | props_rest]
@@ -42,7 +43,7 @@ defmodule Calex.Decoder do
 
     case String.split(keyprops, ";") do
       [key] ->
-        {decode_key(key), val}
+        {decode_key(key), {val, []}}
 
       [key | props] ->
         props =
@@ -62,7 +63,7 @@ defmodule Calex.Decoder do
             {decode_key(k), v}
           end)
 
-        {decode_key(key), [{:value, val} | props]}
+        {decode_key(key), {val, props}}
     end
   end
 

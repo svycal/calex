@@ -3,7 +3,7 @@ defmodule Calex.DecodingTest do
 
   test "decodes dates with time zones" do
     data =
-      crlf """
+      crlf("""
       BEGIN:VCALENDAR
       BEGIN:VEVENT
       DTSTAMP:20210727T183739Z
@@ -20,25 +20,25 @@ defmodule Calex.DecodingTest do
       TRANSP:OPAQUE
       END:VEVENT
       END:VCALENDAR
-      """
+      """)
 
     assert Calex.decode!(data) == [
              vcalendar: [
                [
                  vevent: [
                    [
-                     dtstamp: "20210727T183739Z",
-                     summary: "Hello World",
-                     description: "Here are some notes!",
-                     location: "",
-                     tzid: "America/Winnipeg",
-                     sequence: "0",
-                     uid: "1C192BA5-A5FE-481F-B111-4D401208070E",
-                     created: "20210727T183739Z",
-                     dtstart: [value: "20210728T140000", tzid: "America/Winnipeg"],
-                     dtend: [value: "20210728T151500", tzid: "America/Winnipeg"],
-                     x_apple_travel_advisory_behavior: "AUTOMATIC",
-                     transp: "OPAQUE"
+                     dtstamp: {"20210727T183739Z", []},
+                     summary: {"Hello World", []},
+                     description: {"Here are some notes!", []},
+                     location: {"", []},
+                     tzid: {"America/Winnipeg", []},
+                     sequence: {"0", []},
+                     uid: {"1C192BA5-A5FE-481F-B111-4D401208070E", []},
+                     created: {"20210727T183739Z", []},
+                     dtstart: {"20210728T140000", [{:tzid, "America/Winnipeg"}]},
+                     dtend: {"20210728T151500", [{:tzid, "America/Winnipeg"}]},
+                     x_apple_travel_advisory_behavior: {"AUTOMATIC", []},
+                     transp: {"OPAQUE", []}
                    ]
                  ]
                ]
