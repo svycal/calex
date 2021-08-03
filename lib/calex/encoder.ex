@@ -17,6 +17,34 @@ defmodule Calex.Encoder do
     props |> Enum.map(&(&1 |> encode_value() |> encode_line())) |> Enum.join("\r\n")
   end
 
+  # encode date values
+  defp encode_value({k, {%Date{} = date, props}}) do
+    encoded_date = Timex.format!(date, "{YYYY}{0M}{0D}")
+    props = Keyword.put(props, :value, "DATE")
+    encode_value({k, {encoded_date, props}})
+  end
+
+  # encode UTC datetime values
+  defp encode_value({k, {%DateTime{time_zone: "Etc/UTC"} = datetime, props}}) do
+    encoded_datetime =
+      datetime
+      |> DateTime.truncate(:millisecond)
+      |> Timex.format!("{ISO:Basic:Z}")
+
+    encode_value({k, {encoded_datetime, props}})
+  end
+
+  # encode non-UTC datetime values
+  defp encode_value({k, {%DateTime{time_zone: time_zone} = datetime, props}}) do
+    encoded_datetime =
+      datetime
+      |> DateTime.truncate(:millisecond)
+      |> Timex.format!("{YYYY}{0M}{0D}T{0h24}{m}{s}")
+
+    props = Keyword.put(props, :tzid, time_zone)
+    encode_value({k, {encoded_datetime, props}})
+  end
+
   # encode value with properties
   defp encode_value({k, {v, [{_k, _v} | _] = props}}) do
     encoded_props =
@@ -29,13 +57,6 @@ defmodule Calex.Encoder do
 
   # encode value with empty props
   defp encode_value({k, {v, _}}), do: "#{encode_key(k)}:#{encode_value(v)}"
-
-  defp encode_value(%DateTime{} = datetime) do
-    datetime
-    |> DateTime.truncate(:millisecond)
-    |> DateTime.shift_zone!("Etc/UTC")
-    |> Timex.format!("{ISO:Basic:Z}")
-  end
 
   defp encode_value(atom) when is_atom(atom), do: atom |> to_string() |> String.upcase()
   defp encode_value(other), do: other

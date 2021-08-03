@@ -1,6 +1,13 @@
 defmodule Calex.Decoder do
   @moduledoc false
 
+  # https://rubular.com/r/sXPKG84KfgtfMV
+  @local_datetime_pattern ~r/^\d{8}T\d{6}$/
+
+  # https://rubular.com/r/eyHVyPdFI5KLF7
+  @utc_datetime_pattern ~r/^\d{8}T\d{6}Z$/
+  @date_pattern ~r/^\d{8}$/
+
   def decode!(data) do
     data
     |> decode_lines
@@ -43,7 +50,7 @@ defmodule Calex.Decoder do
 
     case String.split(keyprops, ";") do
       [key] ->
-        {decode_key(key), {val, []}}
+        {decode_key(key), {decode_value(val, []), []}}
 
       [key | props] ->
         props =
@@ -63,8 +70,44 @@ defmodule Calex.Decoder do
             {decode_key(k), v}
           end)
 
-        {decode_key(key), {val, props}}
+        {decode_key(key), {decode_value(val, props), props}}
     end
+  end
+
+  defp decode_value(val, props) do
+    time_zone = Keyword.get(props, :tzid)
+
+    cond do
+      String.match?(val, @local_datetime_pattern) && time_zone ->
+        decode_local_datetime(val, time_zone)
+
+      String.match?(val, @utc_datetime_pattern) ->
+        decode_utc_datetime(val)
+
+      String.match?(val, @date_pattern) && Keyword.get(props, :value) == "DATE" ->
+        decode_date(val)
+
+      true ->
+        val
+    end
+  end
+
+  defp decode_local_datetime(val, time_zone) do
+    val
+    |> Timex.parse!("{YYYY}{0M}{0D}T{h24}{m}{s}")
+    |> DateTime.from_naive!(time_zone)
+  end
+
+  defp decode_utc_datetime(val) do
+    val
+    |> Timex.parse!("{YYYY}{0M}{0D}T{h24}{m}{s}Z")
+    |> DateTime.from_naive!("Etc/UTC")
+  end
+
+  defp decode_date(val) do
+    val
+    |> Timex.parse!("{YYYY}{0M}{0D}")
+    |> NaiveDateTime.to_date()
   end
 
   defp decode_key(bin) do

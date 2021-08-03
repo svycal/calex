@@ -46,6 +46,75 @@ defmodule Calex.EncodingTest do
              """)
   end
 
+  test "encodes UTC dates" do
+    data = [
+      vcalendar: [
+        [
+          vevent: [
+            [
+              dtstamp: {~U[2021-06-01 00:00:00Z], []}
+            ]
+          ]
+        ]
+      ]
+    ]
+
+    assert Calex.encode!(data) ==
+             crlf("""
+             BEGIN:VCALENDAR
+             BEGIN:VEVENT
+             DTSTAMP:20210601T000000Z
+             END:VEVENT
+             END:VCALENDAR
+             """)
+  end
+
+  test "encodes non-UTC dates" do
+    data = [
+      vcalendar: [
+        [
+          vevent: [
+            [
+              dtstamp: {DateTime.from_naive!(~N[2021-06-01 00:00:00], "America/Chicago"), []}
+            ]
+          ]
+        ]
+      ]
+    ]
+
+    assert Calex.encode!(data) ==
+             crlf("""
+             BEGIN:VCALENDAR
+             BEGIN:VEVENT
+             DTSTAMP;TZID=America/Chicago:20210601T000000
+             END:VEVENT
+             END:VCALENDAR
+             """)
+  end
+
+  test "encodes dates" do
+    data = [
+      vcalendar: [
+        [
+          vevent: [
+            [
+              dtstamp: {~D[2021-06-01], []}
+            ]
+          ]
+        ]
+      ]
+    ]
+
+    assert Calex.encode!(data) ==
+             crlf("""
+             BEGIN:VCALENDAR
+             BEGIN:VEVENT
+             DTSTAMP;VALUE=DATE:20210601
+             END:VEVENT
+             END:VCALENDAR
+             """)
+  end
+
   defp crlf(string) do
     string
     |> String.split("\n")
