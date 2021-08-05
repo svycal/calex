@@ -2,11 +2,11 @@ defmodule Calex.Decoder do
   @moduledoc false
 
   # https://rubular.com/r/sXPKG84KfgtfMV
-  @local_datetime_pattern ~r/^\d{8}T\d{6}$/
-
-  # https://rubular.com/r/eyHVyPdFI5KLF7
   @utc_datetime_pattern ~r/^\d{8}T\d{6}Z$/
+  @local_datetime_pattern ~r/^\d{8}T\d{6}$/
   @date_pattern ~r/^\d{8}$/
+
+  @gmt_offset_pattern ~r/^GMT(\+|\-)(\d{2})(\d{2})$/
 
   def decode!(data) do
     data
@@ -93,9 +93,24 @@ defmodule Calex.Decoder do
   end
 
   defp decode_local_datetime(val, time_zone) do
-    val
-    |> Timex.parse!("{YYYY}{0M}{0D}T{h24}{m}{s}")
-    |> DateTime.from_naive!(time_zone)
+    naive_datetime = Timex.parse!(val, "{YYYY}{0M}{0D}T{h24}{m}{s}")
+
+    case Regex.run(@gmt_offset_pattern, time_zone) do
+      [_, "-", hour, min] ->
+        naive_datetime
+        |> DateTime.from_naive!("Etc/UTC")
+        |> Timex.add(String.to_integer(hour) |> Timex.Duration.from_hours())
+        |> Timex.add(String.to_integer(min) |> Timex.Duration.from_minutes())
+
+      [_, "+", hour, min] ->
+        naive_datetime
+        |> DateTime.from_naive!("Etc/UTC")
+        |> Timex.subtract(String.to_integer(hour) |> Timex.Duration.from_hours())
+        |> Timex.subtract(String.to_integer(min) |> Timex.Duration.from_minutes())
+
+      _ ->
+        DateTime.from_naive!(naive_datetime, time_zone)
+    end
   end
 
   defp decode_utc_datetime(val) do

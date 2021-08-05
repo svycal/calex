@@ -118,6 +118,70 @@ defmodule Calex.DecodingTest do
     assert Calex.encode!(decoded) == data
   end
 
+  test "decodes negative GMT offset dates" do
+    data =
+      crlf("""
+      BEGIN:VCALENDAR
+      BEGIN:VEVENT
+      DTSTART;TZID=GMT-0400:20210601T000000
+      END:VEVENT
+      END:VCALENDAR
+      """)
+
+    assert Calex.decode!(data) == [
+             vcalendar: [
+               [
+                 vevent: [
+                   [
+                     dtstart: {~U[2021-06-01 04:00:00Z], [tzid: "GMT-0400"]}
+                   ]
+                 ]
+               ]
+             ]
+           ]
+
+    assert Calex.encode!(Calex.decode!(data)) ==
+             crlf("""
+             BEGIN:VCALENDAR
+             BEGIN:VEVENT
+             DTSTART:20210601T040000Z
+             END:VEVENT
+             END:VCALENDAR
+             """)
+  end
+
+  test "decodes positive GMT offset dates" do
+    data =
+      crlf("""
+      BEGIN:VCALENDAR
+      BEGIN:VEVENT
+      DTSTART;TZID=GMT+0400:20210601T000000
+      END:VEVENT
+      END:VCALENDAR
+      """)
+
+    assert Calex.decode!(data) == [
+             vcalendar: [
+               [
+                 vevent: [
+                   [
+                     dtstart: {~U[2021-05-31 20:00:00Z], [tzid: "GMT+0400"]}
+                   ]
+                 ]
+               ]
+             ]
+           ]
+
+    assert Calex.encode!(Calex.decode!(data)) ==
+             crlf("""
+             BEGIN:VCALENDAR
+             BEGIN:VEVENT
+             DTSTART:20210531T200000Z
+             END:VEVENT
+             END:VCALENDAR
+             """)
+  end
+
   defp crlf(string) do
     string
     |> String.split("\n")

@@ -31,6 +31,9 @@ defmodule Calex.Encoder do
       |> DateTime.truncate(:millisecond)
       |> Timex.format!("{ISO:Basic:Z}")
 
+    # TZID property should not be set when datetime is in UTC
+    props = Keyword.delete(props, :tzid)
+
     encode_value({k, {encoded_datetime, props}})
   end
 
