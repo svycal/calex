@@ -49,6 +49,9 @@ defmodule Calex.Decoder do
     [keyprops, val] = String.split(prop, ":", parts: 2)
 
     case String.split(keyprops, ";") do
+      ["DURATION"] ->
+        {:duration, {Timex.Duration.parse!(val), []}}
+
       [key] ->
         {decode_key(key), {decode_value(val, []), []}}
 

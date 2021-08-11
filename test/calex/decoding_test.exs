@@ -182,6 +182,29 @@ defmodule Calex.DecodingTest do
              """)
   end
 
+  test "decodes the DURATION property" do
+    data =
+      crlf("""
+      BEGIN:VCALENDAR
+      BEGIN:VEVENT
+      DURATION:PT1H
+      END:VEVENT
+      END:VCALENDAR
+      """)
+
+    assert Calex.decode!(data) == [
+             vcalendar: [
+               [
+                 vevent: [
+                   [
+                     duration: {Timex.Duration.from_hours(1), []}
+                   ]
+                 ]
+               ]
+             ]
+           ]
+  end
+
   defp crlf(string) do
     string
     |> String.split("\n")
