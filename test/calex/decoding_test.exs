@@ -205,6 +205,29 @@ defmodule Calex.DecodingTest do
            ]
   end
 
+  test "decodes malformed timestamps without zone info as UTC" do
+    data =
+      crlf("""
+      BEGIN:VCALENDAR
+      BEGIN:VEVENT
+      DTSTAMP:20210601T000000
+      END:VEVENT
+      END:VCALENDAR
+      """)
+
+    assert Calex.decode!(data) == [
+             vcalendar: [
+               [
+                 vevent: [
+                   [
+                     dtstamp: {~U[2021-06-01 00:00:00Z], []}
+                   ]
+                 ]
+               ]
+             ]
+           ]
+  end
+
   defp crlf(string) do
     string
     |> String.split("\n")

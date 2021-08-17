@@ -78,10 +78,10 @@ defmodule Calex.Decoder do
   end
 
   defp decode_value(val, props) do
-    time_zone = Keyword.get(props, :tzid)
+    time_zone = Keyword.get(props, :tzid, "Etc/UTC")
 
     cond do
-      String.match?(val, @local_datetime_pattern) && time_zone ->
+      String.match?(val, @local_datetime_pattern) ->
         decode_local_datetime(val, time_zone)
 
       String.match?(val, @utc_datetime_pattern) ->
