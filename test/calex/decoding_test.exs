@@ -74,6 +74,30 @@ defmodule Calex.DecodingTest do
            ]
   end
 
+  test "decodes Apple travel time" do
+    data =
+      crlf("""
+      BEGIN:VCALENDAR
+      BEGIN:VEVENT
+      X-APPLE-TRAVEL-DURATION;VALUE=DURATION:PT30M
+      END:VEVENT
+      END:VCALENDAR
+      """)
+
+    assert Calex.decode!(data) == [
+             vcalendar: [
+               [
+                 vevent: [
+                   [
+                     x_apple_travel_duration:
+                       {Timex.Duration.from_minutes(30), [value: "DURATION"]}
+                   ]
+                 ]
+               ]
+             ]
+           ]
+  end
+
   test "handle Apple structured location field" do
     data =
       crlf("""

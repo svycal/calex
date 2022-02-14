@@ -6,6 +6,9 @@ defmodule Calex.Decoder do
   @local_datetime_pattern ~r/^\d{8}T\d{6}$/
   @date_pattern ~r/^\d{8}$/
 
+  # Should probably make this more robust
+  @duration_pattern ~r/^P.*$/
+
   @gmt_offset_pattern ~r/^GMT(\+|\-)(\d{2})(\d{2})$/
 
   def decode!(data) do
@@ -90,6 +93,9 @@ defmodule Calex.Decoder do
       String.match?(val, @date_pattern) && Keyword.get(props, :value) == "DATE" ->
         decode_date(val)
 
+      String.match?(val, @duration_pattern) && Keyword.get(props, :value) == "DURATION" ->
+        decode_duration(val)
+
       true ->
         val
     end
@@ -133,5 +139,12 @@ defmodule Calex.Decoder do
     |> String.replace("-", "_")
     |> String.downcase()
     |> String.to_atom()
+  end
+
+  defp decode_duration(val) do
+    case Timex.Duration.parse(val) do
+      {:ok, duration} -> duration
+      _ -> val
+    end
   end
 end
