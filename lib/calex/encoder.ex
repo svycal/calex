@@ -8,13 +8,15 @@ defmodule Calex.Encoder do
   # encode multiple kwlist with begin/end
   defp encode_value({k, [[{_k, _v} | _] | _] = vals}) do
     vals
-    |> Enum.map(&"BEGIN:#{encode_key(k)}\r\n#{encode_value(&1)}\r\nEND:#{encode_key(k)}")
-    |> Enum.join("\r\n")
+    |> Enum.map_join(
+      "\r\n",
+      &"BEGIN:#{encode_key(k)}\r\n#{encode_value(&1)}\r\nEND:#{encode_key(k)}"
+    )
   end
 
   # encode kwlist with limited length lines
   defp encode_value([{_k, _v} | _] = props) do
-    props |> Enum.map(&(&1 |> encode_value() |> encode_line())) |> Enum.join("\r\n")
+    props |> Enum.map_join("\r\n", &(&1 |> encode_value() |> encode_line()))
   end
 
   # encode date values
@@ -52,8 +54,7 @@ defmodule Calex.Encoder do
   defp encode_value({k, {v, [{_k, _v} | _] = props}}) do
     encoded_props =
       props
-      |> Enum.map(fn {pk, pv} -> "#{encode_key(pk)}=#{encode_value(pv)}" end)
-      |> Enum.join(";")
+      |> Enum.map_join(";", fn {pk, pv} -> "#{encode_key(pk)}=#{encode_value(pv)}" end)
 
     "#{encode_key(k)};#{encoded_props}:#{encode_value(v)}"
   end
