@@ -1,4 +1,4 @@
-# Calex
+# Calex [![Hex Docs](https://img.shields.io/hexpm/v/calex)](https://hexdocs.pm/calex/readme.html)
 
 An Elixir library for encoding and decoding the [iCalendar (iCal)](https://datatracker.ietf.org/doc/html/rfc5545) data format.
 
