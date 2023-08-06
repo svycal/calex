@@ -1,12 +1,12 @@
 version: 2.1
 jobs:
-  build:
+  test:
     # The resource_class feature allows configuring CPU and RAM resources for each job. 
     # Different resource classes are available for different executors. 
     # https://circleci.com/docs/2.0/configuration-reference/#resourceclass
     resource_class: "large"
     docker:
-      - image: cimg/elixir:1.13.0
+      - image: cimg/elixir:1.14.0
 
     environment:
       MIX_ENV: test
@@ -65,4 +65,4 @@ jobs:
 workflows:
   build:
     jobs:
-      - build
+      - test
