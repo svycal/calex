@@ -138,6 +138,7 @@ defmodule Calex.Decoder do
     bin
     |> String.replace("-", "_")
     |> String.downcase()
+    |> String.slice(0..254)
     |> String.to_atom()
   end
 

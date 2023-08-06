@@ -252,6 +252,32 @@ defmodule Calex.DecodingTest do
            ]
   end
 
+  test "truncates very long property names" do
+    long_name = 0..256 |> Enum.map_join(fn _ -> "X" end)
+    truncated_long_name = 0..254 |> Enum.map_join(fn _ -> "x" end) |> String.to_atom()
+
+    data =
+      crlf("""
+      BEGIN:VCALENDAR
+      BEGIN:VEVENT
+      #{long_name}:value
+      END:VEVENT
+      END:VCALENDAR
+      """)
+
+    assert Calex.decode!(data) == [
+             vcalendar: [
+               [
+                 vevent: [
+                   [
+                     {truncated_long_name, {"value", []}}
+                   ]
+                 ]
+               ]
+             ]
+           ]
+  end
+
   defp crlf(string) do
     string
     |> String.split("\n")
