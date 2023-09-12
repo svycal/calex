@@ -1,6 +1,8 @@
 defmodule Calex.Decoder do
   @moduledoc false
 
+  alias Calex.DecodeError
+
   # https://rubular.com/r/sXPKG84KfgtfMV
   @utc_datetime_pattern ~r/^\d{8}T\d{6}Z$/
   @local_datetime_pattern ~r/^\d{8}T\d{6}$/
@@ -13,8 +15,8 @@ defmodule Calex.Decoder do
 
   def decode!(data) do
     data
-    |> decode_lines
-    |> decode_blocks
+    |> decode_lines()
+    |> decode_blocks()
   end
 
   defp decode_lines(bin) do
@@ -49,34 +51,38 @@ defmodule Calex.Decoder do
 
   # decode key,params and value for each prop
   defp decode_prop(prop) do
-    [keyprops, val] = String.split(prop, ":", parts: 2)
+    case String.split(prop, ":", parts: 2) do
+      [keyprops, val] ->
+        case String.split(keyprops, ";") do
+          ["DURATION"] ->
+            {:duration, {Timex.Duration.parse!(val), []}}
 
-    case String.split(keyprops, ";") do
-      ["DURATION"] ->
-        {:duration, {Timex.Duration.parse!(val), []}}
+          [key] ->
+            {decode_key(key), {decode_value(val, []), []}}
 
-      [key] ->
-        {decode_key(key), {decode_value(val, []), []}}
+          [key | props] ->
+            props =
+              props
+              |> Enum.map(fn prop ->
+                [k, v] =
+                  case String.split(prop, "=") do
+                    [k1, v1] ->
+                      [k1, v1]
 
-      [key | props] ->
-        props =
-          props
-          |> Enum.map(fn prop ->
-            [k, v] =
-              case String.split(prop, "=") do
-                [k1, v1] ->
-                  [k1, v1]
+                    [k1 | tl] ->
+                      # This case handles malformed X-APPLE-STRUCTURED-LOCATION
+                      # properties that fail to quote-escape `=` characters.
+                      [k1, Enum.join(tl, "=")]
+                  end
 
-                [k1 | tl] ->
-                  # This case handles malformed X-APPLE-STRUCTURED-LOCATION
-                  # properties that fail to quote-escape `=` characters.
-                  [k1, Enum.join(tl, "=")]
-              end
+                {decode_key(k), v}
+              end)
 
-            {decode_key(k), v}
-          end)
+            {decode_key(key), {decode_value(val, props), props}}
+        end
 
-        {decode_key(key), {decode_value(val, props), props}}
+      prop ->
+        raise DecodeError, message: "property has no value: #{inspect(prop)}"
     end
   end
 
@@ -110,15 +116,19 @@ defmodule Calex.Decoder do
         |> DateTime.from_naive!("Etc/UTC")
         |> Timex.add(String.to_integer(hour) |> Timex.Duration.from_hours())
         |> Timex.add(String.to_integer(min) |> Timex.Duration.from_minutes())
+        |> DateTime.truncate(:second)
 
       [_, "+", hour, min] ->
         naive_datetime
         |> DateTime.from_naive!("Etc/UTC")
         |> Timex.subtract(String.to_integer(hour) |> Timex.Duration.from_hours())
         |> Timex.subtract(String.to_integer(min) |> Timex.Duration.from_minutes())
+        |> DateTime.truncate(:second)
 
       _ ->
-        DateTime.from_naive!(naive_datetime, time_zone)
+        naive_datetime
+        |> DateTime.from_naive!(time_zone)
+        |> DateTime.truncate(:second)
     end
   end
 
@@ -126,6 +136,7 @@ defmodule Calex.Decoder do
     val
     |> Timex.parse!("{YYYY}{0M}{0D}T{h24}{m}{s}Z")
     |> DateTime.from_naive!("Etc/UTC")
+    |> DateTime.truncate(:second)
   end
 
   defp decode_date(val) do

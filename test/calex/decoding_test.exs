@@ -1,4 +1,6 @@
 defmodule Calex.DecodingTest do
+  @moduledoc false
+
   use ExUnit.Case
 
   require Logger
@@ -140,6 +142,26 @@ defmodule Calex.DecodingTest do
 
     assert Calex.decode!(data) == decoded
     assert Calex.encode!(decoded) == data
+  end
+
+  test "fails on malformed newlines in X-APPLE-STRUCTURED-LOCATION" do
+    # Apple does not properly encode newlines in properies on their X-APPLE-STRUCTURED-LOCATION
+    # field. They are supposed be \\n instead of \n. This is not very easy for us to work around
+    # since it's in a fundamentally improper format, so for now we'll just raise a special error.
+    #
+    # https://github.com/nextcloud/calendar/issues/3905#issuecomment-1029970769
+
+    data =
+      "BEGIN:VCALENDAR\r\nX-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=3609 Farmington place\\\\nM\r\n yrtle Beach SC 29579\\\\nUnited States;X-APPLE-ABUID=\"Amanda Loehr’s Home\"\r\n ::;X-APPLE-MAPKIT-HANDLE=CAESiwII2TIaEgkND6uJT9tAQBF6MM6Ey7xTwCJzCg1Vbml\r\n 0ZWQgU3RhdGVzEgJVUxoOU291dGggQ2Fyb2xpbmEiAlNDKgxIb3JyeSBDb3VudHkyDE15cnR\r\n sZSBCZWFjaDoFMjk1NzlSDUZhcm1pbmd0b24gUGxaBDM2MDliEjM2MDkgRmFybWluZ3RvbiB\r\n QbCoSMzYwOSBGYXJtaW5ndG9uIFBsMhIzNjA5IEZhcm1pbmd0b24gUGwyF015cnRsZSBCZWF\r\n jaCwgU0MgIDI5NTc5Mg1Vbml0ZWQgU3RhdGVzODlAAFABWicKJRISCQ0Pq4lP20BAEXowzoT\r\n LvFPAGNkyILKqy+yG3YCw7wGQAwE=;X-APPLE-RADIUS=70.58730101326454;X-APPLE-R\r\n EFERENCEFRAME=1;X-TITLE=3609 Farmington place\nMyrtle Beach SC 29579\nUnited States:geo:33.713365,-78.949922\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+
+    exception =
+      try do
+        Calex.decode!(data)
+      rescue
+        e in [Calex.DecodeError] -> e
+      end
+
+    assert exception.message == "property has no value: [\"Myrtle Beach SC 29579\"]"
   end
 
   test "decodes negative GMT offset dates" do
