@@ -300,6 +300,22 @@ defmodule Calex.DecodingTest do
            ]
   end
 
+  test "handles invalid time zones" do
+    data =
+      crlf("""
+      BEGIN:VCALENDAR
+      BEGIN:VEVENT
+      DTSTART;TZID=Romance Standard Time:20240404T091500
+      DTEND;TZID=Romance Standard Time:20240404T104500
+      END:VEVENT
+      END:VCALENDAR
+      """)
+
+    assert_raise Calex.InvalidTimeZoneError, fn ->
+      Calex.decode!(data)
+    end
+  end
+
   defp crlf(string) do
     string
     |> String.split("\n")

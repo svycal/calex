@@ -1,7 +1,7 @@
 defmodule Calex.Decoder do
   @moduledoc false
 
-  alias Calex.DecodeError
+  alias Calex.{DecodeError, InvalidTimeZoneError}
 
   # https://rubular.com/r/sXPKG84KfgtfMV
   @utc_datetime_pattern ~r/^\d{8}T\d{6}Z$/
@@ -126,6 +126,10 @@ defmodule Calex.Decoder do
         |> DateTime.truncate(:second)
 
       _ ->
+        if !Enum.member?(Tzdata.zone_list(), time_zone) do
+          raise InvalidTimeZoneError, message: "#{time_zone} is not a valid time zone identifier"
+        end
+
         naive_datetime
         |> DateTime.from_naive!(time_zone)
         |> DateTime.truncate(:second)
