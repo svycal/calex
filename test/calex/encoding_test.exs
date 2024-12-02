@@ -69,6 +69,29 @@ defmodule Calex.EncodingTest do
              """)
   end
 
+  test "encodes UTC dates to second resolution" do
+    data = [
+      vcalendar: [
+        [
+          vevent: [
+            [
+              dtstamp: {~U[2021-06-01 00:00:00.123Z], []}
+            ]
+          ]
+        ]
+      ]
+    ]
+
+    assert Calex.encode!(data) ==
+             crlf("""
+             BEGIN:VCALENDAR
+             BEGIN:VEVENT
+             DTSTAMP:20210601T000000Z
+             END:VEVENT
+             END:VCALENDAR
+             """)
+  end
+
   test "encodes non-UTC dates" do
     data = [
       vcalendar: [
@@ -76,6 +99,29 @@ defmodule Calex.EncodingTest do
           vevent: [
             [
               dtstamp: {DateTime.from_naive!(~N[2021-06-01 00:00:00], "America/Chicago"), []}
+            ]
+          ]
+        ]
+      ]
+    ]
+
+    assert Calex.encode!(data) ==
+             crlf("""
+             BEGIN:VCALENDAR
+             BEGIN:VEVENT
+             DTSTAMP;TZID=America/Chicago:20210601T000000
+             END:VEVENT
+             END:VCALENDAR
+             """)
+  end
+
+  test "encodes non-UTC dates to second resolution" do
+    data = [
+      vcalendar: [
+        [
+          vevent: [
+            [
+              dtstamp: {DateTime.from_naive!(~N[2021-06-01 00:00:00.123], "America/Chicago"), []}
             ]
           ]
         ]
