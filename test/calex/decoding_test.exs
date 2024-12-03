@@ -53,6 +53,26 @@ defmodule Calex.DecodingTest do
            ]
   end
 
+  test "decodes naive/floating datetimes" do
+    data =
+      crlf("""
+      BEGIN:DAYLIGHT
+      DTSTART:20241103T010000
+      END:DAYLIGHT
+      """)
+
+    assert Calex.decode!(data) == [
+             daylight: [
+               [
+                 dtstart:
+                   {~N[2024-11-03 01:00:00], []}
+               ]
+             ]
+           ]
+
+    assert Calex.encode!(Calex.decode!(data)) == data
+  end
+
   test "decodes dates" do
     data =
       crlf("""
@@ -244,29 +264,6 @@ defmodule Calex.DecodingTest do
                  vevent: [
                    [
                      duration: {Timex.Duration.from_hours(1), []}
-                   ]
-                 ]
-               ]
-             ]
-           ]
-  end
-
-  test "decodes malformed timestamps without zone info as UTC" do
-    data =
-      crlf("""
-      BEGIN:VCALENDAR
-      BEGIN:VEVENT
-      DTSTAMP:20210601T000000
-      END:VEVENT
-      END:VCALENDAR
-      """)
-
-    assert Calex.decode!(data) == [
-             vcalendar: [
-               [
-                 vevent: [
-                   [
-                     dtstamp: {~U[2021-06-01 00:00:00Z], []}
                    ]
                  ]
                ]
