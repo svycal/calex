@@ -50,6 +50,16 @@ defmodule Calex.Encoder do
     encode_value({k, {encoded_datetime, props}})
   end
 
+  # encode naive datetime values
+  defp encode_value({k, {%NaiveDateTime{} = datetime, props}}) do
+    encoded_datetime =
+      datetime
+      |> NaiveDateTime.truncate(:second)
+      |> Timex.format!("{YYYY}{0M}{0D}T{0h24}{m}{s}")
+
+    encode_value({k, {encoded_datetime, props}})
+  end
+
   # encode value with properties
   defp encode_value({k, {v, [{_k, _v} | _] = props}}) do
     encoded_props =

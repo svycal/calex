@@ -138,6 +138,29 @@ defmodule Calex.EncodingTest do
              """)
   end
 
+  test "encodes naive datetimes" do
+    data = [
+      vcalendar: [
+        [
+          vevent: [
+            [
+              dtstart: {~N[2021-06-01 00:00:00.123], []}
+            ]
+          ]
+        ]
+      ]
+    ]
+
+    assert Calex.encode!(data) ==
+             crlf("""
+             BEGIN:VCALENDAR
+             BEGIN:VEVENT
+             DTSTART:20210601T000000
+             END:VEVENT
+             END:VCALENDAR
+             """)
+  end
+
   test "encodes dates" do
     data = [
       vcalendar: [
