@@ -87,7 +87,7 @@ defmodule Calex.Decoder do
   end
 
   defp decode_value(val, props) do
-    time_zone = Keyword.get(props, :tzid, "Etc/UTC")
+    time_zone = Keyword.get(props, :tzid)
 
     cond do
       String.match?(val, @local_datetime_pattern) ->
@@ -110,29 +110,33 @@ defmodule Calex.Decoder do
   defp decode_local_datetime(val, time_zone) do
     naive_datetime = Timex.parse!(val, "{YYYY}{0M}{0D}T{h24}{m}{s}")
 
-    case Regex.run(@gmt_offset_pattern, time_zone) do
-      [_, "-", hour, min] ->
-        naive_datetime
-        |> DateTime.from_naive!("Etc/UTC")
-        |> Timex.add(String.to_integer(hour) |> Timex.Duration.from_hours())
-        |> Timex.add(String.to_integer(min) |> Timex.Duration.from_minutes())
-        |> DateTime.truncate(:second)
+    if time_zone do
+      case Regex.run(@gmt_offset_pattern, time_zone) do
+        [_, "-", hour, min] ->
+          naive_datetime
+          |> DateTime.from_naive!("Etc/UTC")
+          |> Timex.add(String.to_integer(hour) |> Timex.Duration.from_hours())
+          |> Timex.add(String.to_integer(min) |> Timex.Duration.from_minutes())
+          |> DateTime.truncate(:second)
 
-      [_, "+", hour, min] ->
-        naive_datetime
-        |> DateTime.from_naive!("Etc/UTC")
-        |> Timex.subtract(String.to_integer(hour) |> Timex.Duration.from_hours())
-        |> Timex.subtract(String.to_integer(min) |> Timex.Duration.from_minutes())
-        |> DateTime.truncate(:second)
+        [_, "+", hour, min] ->
+          naive_datetime
+          |> DateTime.from_naive!("Etc/UTC")
+          |> Timex.subtract(String.to_integer(hour) |> Timex.Duration.from_hours())
+          |> Timex.subtract(String.to_integer(min) |> Timex.Duration.from_minutes())
+          |> DateTime.truncate(:second)
 
-      _ ->
-        if !Enum.member?(Tzdata.zone_list(), time_zone) do
-          raise InvalidTimeZoneError, message: "#{time_zone} is not a valid time zone identifier"
-        end
+        _ ->
+          if !Enum.member?(Tzdata.zone_list(), time_zone) do
+            raise InvalidTimeZoneError, message: "#{time_zone} is not a valid time zone identifier"
+          end
 
-        naive_datetime
-        |> DateTime.from_naive!(time_zone)
-        |> DateTime.truncate(:second)
+          naive_datetime
+          |> DateTime.from_naive!(time_zone)
+          |> DateTime.truncate(:second)
+      end
+    else
+      naive_datetime
     end
   end
 
