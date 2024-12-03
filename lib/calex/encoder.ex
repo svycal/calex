@@ -30,7 +30,7 @@ defmodule Calex.Encoder do
   defp encode_value({k, {%DateTime{time_zone: "Etc/UTC"} = datetime, props}}) do
     encoded_datetime =
       datetime
-      |> DateTime.truncate(:millisecond)
+      |> DateTime.truncate(:second)
       |> Timex.format!("{ISO:Basic:Z}")
 
     # TZID property should not be set when datetime is in UTC
@@ -43,7 +43,7 @@ defmodule Calex.Encoder do
   defp encode_value({k, {%DateTime{time_zone: time_zone} = datetime, props}}) do
     encoded_datetime =
       datetime
-      |> DateTime.truncate(:millisecond)
+      |> DateTime.truncate(:second)
       |> Timex.format!("{YYYY}{0M}{0D}T{0h24}{m}{s}")
 
     props = Keyword.put(props, :tzid, time_zone)
