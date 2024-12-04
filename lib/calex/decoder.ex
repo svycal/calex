@@ -128,7 +128,8 @@ defmodule Calex.Decoder do
 
         _ ->
           if !Enum.member?(Tzdata.zone_list(), time_zone) do
-            raise InvalidTimeZoneError, message: "#{time_zone} is not a valid time zone identifier"
+            raise InvalidTimeZoneError,
+              message: "#{time_zone} is not a valid time zone identifier"
           end
 
           naive_datetime
