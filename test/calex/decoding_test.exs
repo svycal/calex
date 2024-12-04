@@ -64,8 +64,7 @@ defmodule Calex.DecodingTest do
     assert Calex.decode!(data) == [
              daylight: [
                [
-                 dtstart:
-                   {~N[2024-11-03 01:00:00], []}
+                 dtstart: {~N[2024-11-03 01:00:00], []}
                ]
              ]
            ]
