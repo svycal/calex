@@ -21,7 +21,7 @@ defmodule Calex.Encoder do
 
   # encode date values
   defp encode_value({k, {%Date{} = date, props}}) do
-    encoded_date = Timex.format!(date, "{YYYY}{0M}{0D}")
+    encoded_date = Calendar.strftime(date, "%Y%m%d")
     props = Keyword.put(props, :value, "DATE")
     encode_value({k, {encoded_date, props}})
   end
@@ -31,7 +31,7 @@ defmodule Calex.Encoder do
     encoded_datetime =
       datetime
       |> DateTime.truncate(:second)
-      |> Timex.format!("{ISO:Basic:Z}")
+      |> Calendar.strftime("%Y%m%dT%H%M%SZ")
 
     # TZID property should not be set when datetime is in UTC
     props = Keyword.delete(props, :tzid)
@@ -44,7 +44,7 @@ defmodule Calex.Encoder do
     encoded_datetime =
       datetime
       |> DateTime.truncate(:second)
-      |> Timex.format!("{YYYY}{0M}{0D}T{0h24}{m}{s}")
+      |> Calendar.strftime("%Y%m%dT%H%M%S")
 
     props = Keyword.put(props, :tzid, time_zone)
     encode_value({k, {encoded_datetime, props}})
@@ -55,7 +55,7 @@ defmodule Calex.Encoder do
     encoded_datetime =
       datetime
       |> NaiveDateTime.truncate(:second)
-      |> Timex.format!("{YYYY}{0M}{0D}T{0h24}{m}{s}")
+      |> Calendar.strftime("%Y%m%dT%H%M%S")
 
     encode_value({k, {encoded_datetime, props}})
   end
@@ -74,6 +74,9 @@ defmodule Calex.Encoder do
 
   defp encode_value(atom) when is_atom(atom),
     do: atom |> to_string() |> String.upcase() |> escape_property_value()
+
+  defp encode_value(%Duration{} = duration),
+    do: duration |> Duration.to_iso8601() |> escape_property_value()
 
   defp encode_value(text) when is_binary(text),
     do: text |> escape_property_value()

@@ -134,30 +134,25 @@ defmodule Calex.Decoder do
   end
 
   defp decode_local_datetime(val, time_zone) do
-    naive_datetime = Timex.parse!(val, "{YYYY}{0M}{0D}T{h24}{m}{s}")
+    naive_datetime = parse_basic_naive_datetime!(val)
 
     if time_zone do
       case Regex.run(@gmt_offset_pattern, time_zone) do
         [_, "-", hour, min] ->
           naive_datetime
           |> DateTime.from_naive!("Etc/UTC")
-          |> Timex.add(String.to_integer(hour) |> Timex.Duration.from_hours())
-          |> Timex.add(String.to_integer(min) |> Timex.Duration.from_minutes())
+          |> DateTime.add(String.to_integer(hour), :hour)
+          |> DateTime.add(String.to_integer(min), :minute)
           |> DateTime.truncate(:second)
 
         [_, "+", hour, min] ->
           naive_datetime
           |> DateTime.from_naive!("Etc/UTC")
-          |> Timex.subtract(String.to_integer(hour) |> Timex.Duration.from_hours())
-          |> Timex.subtract(String.to_integer(min) |> Timex.Duration.from_minutes())
+          |> DateTime.add(-String.to_integer(hour), :hour)
+          |> DateTime.add(-String.to_integer(min), :minute)
           |> DateTime.truncate(:second)
 
         _ ->
-          if !Enum.member?(Tzdata.zone_list(), time_zone) do
-            raise InvalidTimeZoneError,
-              message: "#{time_zone} is not a valid time zone identifier"
-          end
-
           naive_datetime
           |> from_naive_datetime!(time_zone)
           |> DateTime.truncate(:second)
@@ -194,15 +189,14 @@ defmodule Calex.Decoder do
 
   defp decode_utc_datetime(val) do
     val
-    |> Timex.parse!("{YYYY}{0M}{0D}T{h24}{m}{s}Z")
+    |> String.trim_trailing("Z")
+    |> parse_basic_naive_datetime!()
     |> DateTime.from_naive!("Etc/UTC")
     |> DateTime.truncate(:second)
   end
 
   defp decode_date(val) do
-    val
-    |> Timex.parse!("{YYYY}{0M}{0D}")
-    |> NaiveDateTime.to_date()
+    parse_basic_date!(val)
   end
 
   defp decode_key(key) do
@@ -215,9 +209,25 @@ defmodule Calex.Decoder do
   end
 
   defp decode_duration(val) do
-    case Timex.Duration.parse(val) do
+    case Duration.from_iso8601(val) do
       {:ok, duration} -> duration
       _ -> val
     end
+  end
+
+  defp parse_basic_date!(<<year::binary-size(4), month::binary-size(2), day::binary-size(2)>>) do
+    Date.new!(String.to_integer(year), String.to_integer(month), String.to_integer(day))
+  end
+
+  defp parse_basic_naive_datetime!(
+         <<year::binary-size(4), month::binary-size(2), day::binary-size(2), "T",
+           hour::binary-size(2), minute::binary-size(2), second::binary-size(2)>>
+       ) do
+    date = Date.new!(String.to_integer(year), String.to_integer(month), String.to_integer(day))
+
+    time =
+      Time.new!(String.to_integer(hour), String.to_integer(minute), String.to_integer(second))
+
+    NaiveDateTime.new!(date, time)
   end
 end

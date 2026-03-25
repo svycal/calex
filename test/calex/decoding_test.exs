@@ -161,7 +161,7 @@ defmodule Calex.DecodingTest do
                  vevent: [
                    [
                      x_apple_travel_duration:
-                       {Timex.Duration.from_minutes(30), [value: "DURATION"]}
+                       {Duration.from_iso8601!("PT30M"), [value: "DURATION"]}
                    ]
                  ]
                ]
@@ -366,7 +366,7 @@ defmodule Calex.DecodingTest do
                [
                  vevent: [
                    [
-                     duration: {Timex.Duration.from_hours(1), []}
+                     duration: {Duration.from_iso8601!("PT1H"), []}
                    ]
                  ]
                ]
